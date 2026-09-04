@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // users कलेक्शन: प्रत्येकजण फक्त स्वतःचा profile वाचू शकतो
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == userId;
+    }
+
+    // attendance: फक्त faculty/admin लिहू शकतात, login केलेला कोणीही वाचू शकतो
+    match /attendance/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ["faculty", "admin"];
+    }
+
+    // classes: सगळ्यांना वाचायला परवानगी, फक्त admin एडिट करू शकतो
+    match /classes/{classId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+  }
+}
